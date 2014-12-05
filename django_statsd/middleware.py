@@ -132,7 +132,7 @@ class StatsdMiddleware(object):
             cls.scope.timings.stop('total')
             cls.scope.timings.submit(tags)
             cls.scope.counter.submit(tags)
-            cls.scope.counter_site.submit({'type': 'site'})
+            cls.scope.counter_site.submit(['type:' + 'site'])
 
     def process_request(self, request):
         # store the timings in the request so it can be used everywhere
@@ -163,7 +163,7 @@ class StatsdMiddleware(object):
         if request.is_ajax():
             method += '_ajax'
         if getattr(self, 'view_name', None):
-            self.stop({'method': method, 'view_name': self.view_name, 'type': 'view'})
+            self.stop(['method:' + method, 'view_name:' + self.view_name, 'type:' + 'view'])
         self.cleanup(request)
         return response
 
