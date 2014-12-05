@@ -66,7 +66,6 @@ class Counter(Client):
         self.data[key] -= delta
 
     def submit(self, tags):
-        tags = [k + ":" + v for k, v in tags.items()]
         for k, v in self.data.items():
             if v:
                 statsd.increment(self.prefix + "." + k, v,
@@ -96,7 +95,6 @@ class Timer(Client):
         return delta
 
     def submit(self, tags):
-        tags = [k + ":" + v for k, v in tags.items()]
         for k in list(self.data.keys()):
             statsd.timing(self.prefix + "." + k, self.data.pop(k),
                           tags=tags, sample_rate=sample_rate)
@@ -132,7 +130,7 @@ class StatsdMiddleware(object):
             cls.scope.timings.stop('total')
             cls.scope.timings.submit(tags)
             cls.scope.counter.submit(tags)
-            cls.scope.counter_site.submit(['type:' + 'site'])
+            cls.scope.counter_site.submit(['type:site'])
 
     def process_request(self, request):
         # store the timings in the request so it can be used everywhere
@@ -163,7 +161,7 @@ class StatsdMiddleware(object):
         if request.is_ajax():
             method += '_ajax'
         if getattr(self, 'view_name', None):
-            self.stop(['method:' + method, 'view_name:' + self.view_name, 'type:' + 'view'])
+            self.stop(['method:' + method, 'view_name:' + self.view_name, 'type:view'])
         self.cleanup(request)
         return response
 
