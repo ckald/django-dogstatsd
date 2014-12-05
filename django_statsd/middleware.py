@@ -5,12 +5,10 @@ import functools
 import threading
 import warnings
 import collections
-import statsd
+from statsd import statsd
 
 from django.conf import settings
 from django.core import exceptions
-
-from django_statsd import utils
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +16,13 @@ try:
     TRACK_MIDDLEWARE = getattr(settings, 'STATSD_TRACK_MIDDLEWARE', False)
 except exceptions.ImproperlyConfigured:
     TRACK_MIDDLEWARE = False
+
+if TRACK_MIDDLEWARE:
+    host = getattr(settings, 'STATSD_HOST', '127.0.0.1')
+    port = getattr(settings, 'STATSD_PORT', 8125)
+    sample_rate = getattr(settings, 'STATSD_SAMPLE_RATE', 1.0)
+
+    statsd.connect(host=host, port=port)
 
 
 class WithTimer(object):
@@ -39,7 +44,6 @@ class WithTimer(object):
 
 
 class Client(object):
-    class_ = statsd.Client
 
     def __init__(self, prefix='view'):
         global_prefix = getattr(settings, 'STATSD_PREFIX', None)
@@ -48,18 +52,12 @@ class Client(object):
         self.prefix = prefix
         self.data = collections.defaultdict(int)
 
-    def get_client(self, *args):
-        args = [self.prefix] + list(args)
-        prefix = '.'.join(a for a in args if a)
-        return utils.get_client(prefix, class_=self.class_)
-
     def submit(self, *args):
         raise NotImplementedError(
             'Subclasses must define a `submit` function')
 
 
 class Counter(Client):
-    class_ = statsd.Counter
 
     def increment(self, key, delta=1):
         self.data[key] += delta
@@ -67,18 +65,17 @@ class Counter(Client):
     def decrement(self, key, delta=1):
         self.data[key] -= delta
 
-    def submit(self, *args):
-        client = self.get_client(*args)
+    def submit(self, tags):
         for k, v in self.data.items():
             if v:
-                client.increment(k, v)
+                statsd.increment(self.prefix + "." + k, v,
+                                 tags=tags, sample_rate=sample_rate)
 
 
 class Timer(Client):
-    class_ = statsd.Timer
 
     def __init__(self, prefix='view'):
-        Client.__init__(self, prefix)
+        super(Timer, self).__init__(prefix)
         self.starts = collections.defaultdict(collections.deque)
         self.data = collections.defaultdict(float)
 
@@ -97,10 +94,10 @@ class Timer(Client):
         self.data[key] += delta
         return delta
 
-    def submit(self, *args):
-        client = self.get_client(*args)
+    def submit(self, tags):
         for k in list(self.data.keys()):
-            client.send(k, self.data.pop(k))
+            statsd.timing(self.prefix + "." + k, self.data.pop(k),
+                          tags=tags, sample_rate=sample_rate)
 
         if settings.DEBUG:
             assert not self.starts, ('Timer(s) %r were started but never '
@@ -128,12 +125,12 @@ class StatsdMiddleware(object):
         return cls.scope
 
     @classmethod
-    def stop(cls, *key):
+    def stop(cls, tags):
         if getattr(cls.scope, 'timings', None):
             cls.scope.timings.stop('total')
-            cls.scope.timings.submit(*key)
-            cls.scope.counter.submit(*key)
-            cls.scope.counter_site.submit('site')
+            cls.scope.timings.submit(tags)
+            cls.scope.counter.submit(tags)
+            cls.scope.counter_site.submit({'type': 'site'})
 
     def process_request(self, request):
         # store the timings in the request so it can be used everywhere
@@ -164,7 +161,7 @@ class StatsdMiddleware(object):
         if request.is_ajax():
             method += '_ajax'
         if getattr(self, 'view_name', None):
-            self.stop(method, self.view_name)
+            self.stop({'method': method, 'view_name': self.view_name, 'type': 'view'})
         self.cleanup(request)
         return response
 
