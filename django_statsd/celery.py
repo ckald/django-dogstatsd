@@ -1,14 +1,13 @@
 from __future__ import absolute_import
-from django_statsd import middleware, utils
+from statsd import statsd
+from django_statsd import middleware
 
 try:
     from celery import signals
     from celery.utils import dispatch
 
-    counter = utils.get_counter('celery.status')
-
     def increment(signal):
-        counter.increment(signal)
+        statsd.increment('celery.status', signal)
 
         def _increment(**kwargs):
             pass

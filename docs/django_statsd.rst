@@ -64,12 +64,3 @@ django_statsd Package
     :members:
     :undoc-members:
     :show-inheritance:
-
-:mod:`utils` Module
--------------------
-
-.. automodule:: django_statsd.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
