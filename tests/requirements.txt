@@ -1,4 +1,4 @@
-python-statsd
+dogstatsd-python>=0.5.2
 pytest
 pytest-cache
 pytest-cov

@@ -42,9 +42,8 @@ if __name__ == '__main__':
         packages=setuptools.find_packages(exclude=['tests', 'tests.*']),
         long_description=long_description,
         cmdclass={'test': PyTest},
-        install_requires=['python-statsd>=1.6.0'],
+        install_requires=['dogstatsd-python>=0.5.2'],
         classifiers=[
             'License :: OSI Approved :: BSD License',
         ],
     )
-
