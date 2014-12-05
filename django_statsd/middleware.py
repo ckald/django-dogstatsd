@@ -66,6 +66,7 @@ class Counter(Client):
         self.data[key] -= delta
 
     def submit(self, tags):
+        tags = [k + ":" + v for k, v in tags.items()]
         for k, v in self.data.items():
             if v:
                 statsd.increment(self.prefix + "." + k, v,
@@ -95,6 +96,7 @@ class Timer(Client):
         return delta
 
     def submit(self, tags):
+        tags = [k + ":" + v for k, v in tags.items()]
         for k in list(self.data.keys()):
             statsd.timing(self.prefix + "." + k, self.data.pop(k),
                           tags=tags, sample_rate=sample_rate)
