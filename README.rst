@@ -1,21 +1,15 @@
 Introduction
 ============
 
-`django_statsd` is a middleware that uses `python-statsd` to log query
+`django_statsd` is a middleware that uses `dogstatsd-python` to log query
 and view durations to statsd.
 
-* Documentation
-    - http://django-stats.readthedocs.org/en/latest/
 * Source
-    - https://github.com/WoLpH/django-statsd
+    - https://github.com/ckald/django-statsd-1
 * Bug reports 
-    - https://github.com/WoLpH/django-statsd/issues
-* Package homepage
-    - https://pypi.python.org/pypi/django-statsd
+    - https://github.com/ckald/django-statsd-1/issues
 * Python Statsd
-    - https://github.com/WoLpH/python-statsd
-* Graphite
-    - http://graphite.wikidot.com
+    - https://github.com/DataDog/dogstatsd-python
 * Statsd 
     - code: https://github.com/etsy/statsd
     - blog post: http://codeascraft.etsy.com/2011/02/15/measure-anything-measure-everything/
@@ -38,6 +32,7 @@ To install, add the following to your ``settings.py``:
     ``MIDDLEWARE_CLASSES``
 3. ``django_statsd.middleware.StatsdMiddlewareTimer`` to the **bottom** of your 
     ``MIDDLEWARE_CLASSES``
+4. Add configuration parameters: ``STATSD_TRACK_MIDDLEWARE = True``, ``STATSD_PREFIX = "server.prefix.or.else"``
 
 Advanced Usage
 --------------
